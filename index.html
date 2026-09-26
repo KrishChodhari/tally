@@ -37,7 +37,7 @@
   :root[data-theme="dark"]{ --page-bg:#1c1a17; }
 
   *{box-sizing:border-box;}
-  html,body{height:100%;}
+  html,body{height:100%; overflow:hidden;}
   body{
     margin:0;
     background:var(--page-bg);
@@ -45,12 +45,14 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    min-height:100%;
-    padding:32px 16px;
+    height:100dvh;
+    padding:10px;
   }
 
   .unit{
-    width:min(360px, 92vw);
+    width:360px;
+    flex-shrink:0;
+    transform-origin:center center;
     background:linear-gradient(160deg, var(--shell-1), var(--shell-2));
     border-radius:18px;
     padding:20px 18px 24px;
@@ -624,6 +626,29 @@
   });
 
   render();
+
+  // Scale the whole shell to fit the real visible viewport (accounts for
+  // mobile browser chrome like the address/tab bars) so nothing gets cut
+  // off or requires scrolling.
+  const unit = document.querySelector('.unit');
+  function fitToViewport(){
+    unit.style.transform = 'none';
+    const rect = unit.getBoundingClientRect();
+    const vv = window.visualViewport;
+    const vh = (vv ? vv.height : window.innerHeight) - 16;
+    const vw = (vv ? vv.width : window.innerWidth) - 16;
+    const scale = Math.min(1, vh / rect.height, vw / rect.width);
+    unit.style.transform = `scale(${scale})`;
+  }
+  window.addEventListener('resize', fitToViewport);
+  window.addEventListener('orientationchange', () => setTimeout(fitToViewport, 150));
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', fitToViewport);
+  }
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(fitToViewport);
+  }
+  fitToViewport();
 })();
 </script>
 </body>
