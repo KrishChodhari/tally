@@ -132,15 +132,18 @@
   }
   .indicators{
     display:flex;
-    gap:10px;
+    justify-content:space-between;
+    align-items:center;
     height:14px;
     font-size:11px;
     font-family:'Share Tech Mono', monospace;
     color:#4c5a3f;
     letter-spacing:.06em;
   }
+  .indicators-left{ display:flex; gap:10px; }
   .indicators span{opacity:.25;}
   .indicators span.on{opacity:1; color:#dff0c8;}
+  #ind-op{ font-size:14px; font-weight:700; }
 
   .screen{
     background:linear-gradient(180deg, var(--screen-bg), var(--screen-bg-2));
@@ -230,10 +233,13 @@
 
     <div class="screen-wrap">
       <div class="indicators">
-        <span id="ind-m">M</span>
-        <span id="ind-m2">M2</span>
-        <span id="ind-mu">MU</span>
-        <span id="ind-err">E</span>
+        <div class="indicators-left">
+          <span id="ind-m">M</span>
+          <span id="ind-m2">M2</span>
+          <span id="ind-mu">MU</span>
+          <span id="ind-err">E</span>
+        </div>
+        <span id="ind-op">&nbsp;</span>
       </div>
       <div class="screen"><div class="screen-value" id="screen">0</div></div>
     </div>
@@ -288,6 +294,8 @@
   const indM2 = document.getElementById('ind-m2');
   const indMU = document.getElementById('ind-mu');
   const indErr = document.getElementById('ind-err');
+  const indOp = document.getElementById('ind-op');
+  const OP_SYMBOLS = { '+':'+', '-':'\u2212', '*':'\u00d7', '/':'\u00f7', '^':'^' };
 
   let display = '0';
   let stored = null;      // pending left operand
@@ -332,6 +340,8 @@
     indM2.classList.toggle('on', memory2 !== 0);
     indMU.classList.toggle('on', markupActive);
     indErr.classList.toggle('on', error);
+    indOp.textContent = operator ? OP_SYMBOLS[operator] : '\u00a0';
+    indOp.classList.toggle('on', !!operator);
   }
 
   function clampDisplay(n){
@@ -498,6 +508,20 @@
     render();
   }
 
+  // Resolves any pending operator (e.g. "100 + 100") the same way pressing
+  // = would, but without touching waitingForOperand/markup — used so memory
+  // keys can finish a chained calculation before storing the result.
+  function resolvePending(){
+    if (markupActive) { finishMarkup(parseFloat(display)); return; }
+    const cur = parseFloat(display);
+    if (operator !== null && stored !== null) {
+      const result = compute(parseFloat(stored), cur, operator);
+      display = clampDisplay(result);
+    }
+    stored = null;
+    operator = null;
+  }
+
   // --- Primary memory: dedicated MC / MR / M- / M+
   function memClear(){ memory = 0; render(); }
   function memRecall(){
@@ -508,12 +532,14 @@
   }
   function memPlus(){
     if (error) return;
+    resolvePending();
     memory += parseFloat(display);
     waitingForOperand = true;
     render();
   }
   function memMinus(){
     if (error) return;
+    resolvePending();
     memory -= parseFloat(display);
     waitingForOperand = true;
     render();
@@ -522,12 +548,14 @@
   // --- Independent second memory: MII+ / MII- add & subtract; MIIC recalls (tap) or clears (double-tap)
   function mii2Plus(){
     if (error) return;
+    resolvePending();
     memory2 += parseFloat(display);
     waitingForOperand = true;
     render();
   }
   function mii2Minus(){
     if (error) return;
+    resolvePending();
     memory2 -= parseFloat(display);
     waitingForOperand = true;
     render();
