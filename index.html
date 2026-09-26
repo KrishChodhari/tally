@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tally &mdash; Business Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --shell-1:#d7d1c2;
+    --shell-2:#bfb8a4;
+    --shell-edge:#8f8874;
+    --screen-bg:#aab994;
+    --screen-bg-2:#9cae82;
+    --screen-ink:#1d2a16;
+    --key-num:#f4f1e8;
+    --key-num-ink:#26241d;
+    --key-op:#2f4a52;
+    --key-op-ink:#eef4f2;
+    --key-mem:#3d6b5c;
+    --key-mem-ink:#eef6f0;
+    --key-mem2:#5a5230;
+    --key-mem2-ink:#f6f1e2;
+    --key-clear:#a3462f;
+    --key-clear-ink:#fbeee9;
+    --key-gt:#b98a2e;
+    --key-gt-ink:#2a1c05;
+    --page-bg:#e7e2d6;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-sizing: border-box;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){ --page-bg:#1c1a17; }
+  }
+  :root[data-theme="dark"]{ --page-bg:#1c1a17; }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--page-bg);
+    font-family:'IBM Plex Sans', system-ui, sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100%;
+    padding:32px 16px;
+  }
+
+  .unit{
+    width:min(360px, 92vw);
+    background:linear-gradient(160deg, var(--shell-1), var(--shell-2));
+    border-radius:18px;
+    padding:20px 18px 24px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.4) inset,
+      0 -6px 0 rgba(0,0,0,.08) inset,
+      0 18px 40px rgba(0,0,0,.28);
+    border:1px solid var(--shell-edge);
+  }
+
+  .brand{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    padding:2px 4px 14px;
+    color:#3a3628;
+  }
+  .brand .name{
+    font-weight:600;
+    font-size:15px;
+    letter-spacing:.03em;
+  }
+  .brand .model{
+    font-size:12px;
+    color:#6b6552;
+  }
+
+  .switches{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    padding:0 4px 12px;
+  }
+  .switch-group{
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .switch-label{
+    font-size:9.5px;
+    color:#6b6552;
+    letter-spacing:.06em;
+    font-weight:600;
+  }
+  .switch-track{
+    display:flex;
+    background:#26241b;
+    border-radius:6px;
+    padding:2px;
+    gap:1px;
+    box-shadow:0 1px 3px rgba(0,0,0,.3) inset;
+  }
+  .switch-track button{
+    border:none;
+    background:transparent;
+    color:#8a8370;
+    font-size:10px;
+    font-weight:600;
+    padding:4px 6px;
+    border-radius:4px;
+    cursor:pointer;
+    font-family:'Share Tech Mono', monospace;
+    box-shadow:none;
+  }
+  .switch-track button:active{ transform:none; box-shadow:none; }
+  .switch-track button.active{
+    background:#cdc6ae;
+    color:#232016;
+  }
+
+  .screen-wrap{
+    background:#232b1e;
+    border-radius:8px;
+    padding:10px 12px 12px;
+    margin-bottom:16px;
+    box-shadow:0 3px 8px rgba(0,0,0,.35) inset;
+  }
+  .indicators{
+    display:flex;
+    gap:10px;
+    height:14px;
+    font-size:11px;
+    font-family:'Share Tech Mono', monospace;
+    color:#4c5a3f;
+    letter-spacing:.06em;
+  }
+  .indicators span{opacity:.25;}
+  .indicators span.on{opacity:1; color:#dff0c8;}
+
+  .screen{
+    background:linear-gradient(180deg, var(--screen-bg), var(--screen-bg-2));
+    border-radius:4px;
+    margin-top:6px;
+    padding:14px 12px;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .screen::-webkit-scrollbar{display:none;}
+  .screen-value{
+    font-family:'Share Tech Mono', monospace;
+    font-size:34px;
+    line-height:1;
+    color:var(--screen-ink);
+    text-align:right;
+    white-space:nowrap;
+    letter-spacing:.02em;
+  }
+
+  .keys{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:8px;
+  }
+  button{
+    border:none;
+    border-radius:8px;
+    font-family:inherit;
+    font-size:14px;
+    font-weight:500;
+    padding:13px 4px;
+    cursor:pointer;
+    box-shadow:0 2px 0 rgba(0,0,0,.25), 0 1px 3px rgba(0,0,0,.2);
+    transition:transform .04s ease, box-shadow .04s ease;
+  }
+  button:active{
+    transform:translateY(2px);
+    box-shadow:0 0 0 rgba(0,0,0,.25), 0 1px 2px rgba(0,0,0,.15);
+  }
+  button:focus-visible{
+    outline:2px solid #fff;
+    outline-offset:2px;
+  }
+
+  .k-num{background:var(--key-num); color:var(--key-num-ink);}
+  .k-op{background:var(--key-op); color:var(--key-op-ink); font-size:16px;}
+  .k-mem{background:var(--key-mem); color:var(--key-mem-ink); font-size:12.5px;}
+  .k-mem2{background:var(--key-mem2); color:var(--key-mem2-ink); font-size:11.5px;}
+  .k-clear{background:var(--key-clear); color:var(--key-clear-ink); font-size:12.5px;}
+  .k-gt{background:var(--key-gt); color:var(--key-gt-ink); font-size:12.5px;}
+  .k-eq{background:#1d2a16; color:#dff0c8; font-size:19px; grid-column:span 4;}
+  .k-wide{grid-column:span 2;}
+
+  @media (prefers-reduced-motion: reduce){
+    button{transition:none;}
+  }
+</style>
+</head>
+<body>
+  <div class="unit">
+    <div class="brand">
+      <span class="name">Tally</span>
+      <span class="model">Business Calculator</span>
+    </div>
+
+    <div class="switches">
+      <div class="switch-group">
+        <span class="switch-label">DEC</span>
+        <div class="switch-track" id="decTrack">
+          <button data-val="N">N</button>
+          <button data-val="0">0</button>
+          <button data-val="1">1</button>
+          <button data-val="2">2</button>
+          <button data-val="3">3</button>
+        </div>
+      </div>
+      <div class="switch-group">
+        <span class="switch-label">GRP</span>
+        <div class="switch-track" id="grpTrack">
+          <button data-val="N">N</button>
+          <button data-val="LAKH">IND</button>
+          <button data-val="INTL">INTL</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-wrap">
+      <div class="indicators">
+        <span id="ind-m">M</span>
+        <span id="ind-m2">M2</span>
+        <span id="ind-gt">GT</span>
+        <span id="ind-mu">MU</span>
+        <span id="ind-err">E</span>
+      </div>
+      <div class="screen"><div class="screen-value" id="screen">0</div></div>
+    </div>
+
+    <div class="keys">
+      <button class="k-clear" data-act="c">AC</button>
+      <button class="k-mem2" data-act="miic">M2R/C</button>
+      <button class="k-mem2" data-act="mii-">M2&minus;</button>
+      <button class="k-mem2" data-act="mii+">M2+</button>
+
+      <button class="k-mem" data-act="mc">MC</button>
+      <button class="k-mem" data-act="mr">MR</button>
+      <button class="k-mem" data-act="m-">M&minus;</button>
+      <button class="k-mem" data-act="m+">M+</button>
+
+      <button class="k-op" data-act="pct">%</button>
+      <button class="k-op" data-op="^">^</button>
+      <button class="k-op" data-act="sign">+/&minus;</button>
+      <button class="k-gt" data-act="mu">MU</button>
+
+      <button class="k-num" data-digit="7">7</button>
+      <button class="k-num" data-digit="8">8</button>
+      <button class="k-num" data-digit="9">9</button>
+      <button class="k-op" data-op="/">&divide;</button>
+
+      <button class="k-num" data-digit="4">4</button>
+      <button class="k-num" data-digit="5">5</button>
+      <button class="k-num" data-digit="6">6</button>
+      <button class="k-op" data-op="*">&times;</button>
+
+      <button class="k-num" data-digit="1">1</button>
+      <button class="k-num" data-digit="2">2</button>
+      <button class="k-num" data-digit="3">3</button>
+      <button class="k-op" data-op="-">&minus;</button>
+
+      <button class="k-num" data-act="00">00</button>
+      <button class="k-num" data-digit="0">0</button>
+      <button class="k-num" data-act="dot">.</button>
+      <button class="k-op" data-op="+">+</button>
+
+      <button class="k-clear k-wide" data-act="ce">CE</button>
+      <button class="k-clear k-wide" data-act="back">&#9003;</button>
+
+      <button class="k-eq" data-act="eq">=</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const screenEl = document.getElementById('screen');
+  const indM = document.getElementById('ind-m');
+  const indM2 = document.getElementById('ind-m2');
+  const indGT = document.getElementById('ind-gt');
+  const indMU = document.getElementById('ind-mu');
+  const indErr = document.getElementById('ind-err');
+
+  let display = '0';
+  let stored = null;      // pending left operand
+  let operator = null;    // pending operator
+  let waitingForOperand = false;
+  let memory = 0;         // primary memory (MC / MR / M- / M+)
+  let memory2 = 0;        // independent second memory (MII- / MII+ / MIIC)
+  let grandTotal = 0;
+  let error = false;
+  let gtArmedToClear = false;
+  let mii_clearArmed = false;
+  let mii_timer = null;
+  let markupActive = false;
+  let markupCost = 0;
+  let decimalPlaces = 'N';  // 'N' = unrounded, else '0'/'1'/'2'/'3' fixed decimals on results
+  let groupMode = 'N';      // 'N' = none, 'LAKH' = 2-2-3 Indian grouping, 'INTL' = 3-digit grouping
+
+  const MAX_DIGITS = 12;
+
+  function groupIntl(digits){
+    return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+  function groupLakh(digits){
+    if (digits.length <= 3) return digits;
+    const last3 = digits.slice(-3);
+    const rest = digits.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ',');
+    return rest + ',' + last3;
+  }
+  function formatForScreen(raw){
+    if (groupMode === 'N') return raw;
+    const neg = raw.startsWith('-');
+    const unsigned = neg ? raw.slice(1) : raw;
+    const dotIdx = unsigned.indexOf('.');
+    let intPart = dotIdx === -1 ? unsigned : unsigned.slice(0, dotIdx);
+    const fracPart = dotIdx === -1 ? null : unsigned.slice(dotIdx + 1);
+    if (intPart === '') intPart = '0';
+    const grouped = groupMode === 'LAKH' ? groupLakh(intPart) : groupIntl(intPart);
+    return (neg ? '-' : '') + grouped + (fracPart !== null ? '.' + fracPart : '');
+  }
+
+  function render(){
+    screenEl.textContent = error ? 'Error' : formatForScreen(display);
+    indM.classList.toggle('on', memory !== 0);
+    indM2.classList.toggle('on', memory2 !== 0);
+    indGT.classList.toggle('on', grandTotal !== 0);
+    indMU.classList.toggle('on', markupActive);
+    indErr.classList.toggle('on', error);
+  }
+
+  function clampDisplay(n){
+    if (!isFinite(n)) { error = true; return '0'; }
+    let s;
+    if (decimalPlaces !== 'N') {
+      s = n.toFixed(parseInt(decimalPlaces, 10));
+    } else {
+      s = String(parseFloat(n.toPrecision(12)));
+      if (s.length > MAX_DIGITS + 1 && s.includes('.')) {
+        s = n.toFixed(Math.max(0, MAX_DIGITS - String(Math.trunc(n)).length));
+        s = String(parseFloat(s));
+      }
+    }
+    if (s.replace(/[-.]/g,'').length > MAX_DIGITS) {
+      error = true;
+      return '0';
+    }
+    return s;
+  }
+
+  function inputDigit(d){
+    if (error) allClear();
+    if (waitingForOperand) {
+      display = d;
+      waitingForOperand = false;
+    } else {
+      if (display.replace(/[-.]/g,'').length >= MAX_DIGITS) return;
+      display = display === '0' ? d : display + d;
+    }
+    render();
+  }
+
+  function inputDoubleZero(){
+    if (error) allClear();
+    if (waitingForOperand) { display = '0'; waitingForOperand = false; render(); return; }
+    if (display.replace(/[-.]/g,'').length >= MAX_DIGITS - 1) return;
+    display = display === '0' ? '0' : display + '00';
+    render();
+  }
+
+  function inputDot(){
+    if (error) allClear();
+    if (waitingForOperand) { display = '0.'; waitingForOperand = false; render(); return; }
+    if (!display.includes('.')) display += '.';
+    render();
+  }
+
+  function allClear(){
+    display = '0';
+    stored = null;
+    operator = null;
+    waitingForOperand = false;
+    error = false;
+    markupActive = false;
+    memory = 0;
+    memory2 = 0;
+    mii_clearArmed = false;
+    render();
+  }
+
+  function clearEntry(){
+    if (error) { allClear(); return; }
+    display = '0';
+    waitingForOperand = false;
+    render();
+  }
+
+  function backspace(){
+    if (error) { allClear(); return; }
+    if (waitingForOperand) return;
+    display = display.length > 1 ? display.slice(0, -1) : '0';
+    render();
+  }
+
+  function toggleSign(){
+    if (error) return;
+    if (display !== '0') {
+      display = display.startsWith('-') ? display.slice(1) : '-' + display;
+    }
+    render();
+  }
+
+  function percent(){
+    if (error) return;
+    const cur = parseFloat(display);
+    if (markupActive) {
+      finishMarkup(cur);
+      return;
+    }
+    if (stored !== null && operator) {
+      const base = parseFloat(stored);
+      let v;
+      if (operator === '+' || operator === '-') v = base * (cur / 100);
+      else v = cur / 100;
+      display = clampDisplay(v);
+    } else {
+      display = clampDisplay(cur / 100);
+    }
+    render();
+  }
+
+  function compute(a, b, op){
+    switch(op){
+      case '+': return a + b;
+      case '-': return a - b;
+      case '*': return a * b;
+      case '/': return b === 0 ? NaN : a / b;
+      case '^': return Math.pow(a, b);
+      default: return b;
+    }
+  }
+
+  function setOperator(nextOp){
+    if (error) return;
+    if (markupActive) { finishMarkup(parseFloat(display)); }
+    const cur = parseFloat(display);
+    if (operator && waitingForOperand) {
+      operator = nextOp;
+      render();
+      return;
+    }
+    if (stored === null) {
+      stored = cur;
+    } else if (operator) {
+      const result = compute(parseFloat(stored), cur, operator);
+      stored = result;
+      display = clampDisplay(result);
+    }
+    operator = nextOp;
+    waitingForOperand = true;
+    render();
+  }
+
+  function equals(){
+    if (error) return;
+    if (markupActive) { finishMarkup(parseFloat(display)); return; }
+    const cur = parseFloat(display);
+    if (operator !== null && stored !== null) {
+      const result = compute(parseFloat(stored), cur, operator);
+      display = clampDisplay(result);
+      if (!error) grandTotal += parseFloat(display);
+    }
+    stored = null;
+    operator = null;
+    waitingForOperand = true;
+    render();
+  }
+
+  // --- Markup (MU): enter cost, press MU, enter markup %, press % or = for sell price
+  function startMarkup(){
+    if (error) return;
+    markupCost = parseFloat(display);
+    markupActive = true;
+    waitingForOperand = true;
+    render();
+  }
+  function finishMarkup(pct){
+    const sell = markupCost + markupCost * (pct / 100);
+    display = clampDisplay(sell);
+    markupActive = false;
+    waitingForOperand = true;
+    stored = null;
+    operator = null;
+    render();
+  }
+
+  // --- Primary memory: dedicated MC / MR / M- / M+
+  function memClear(){ memory = 0; render(); }
+  function memRecall(){
+    if (error) return;
+    display = clampDisplay(memory);
+    waitingForOperand = true;
+    render();
+  }
+  function memPlus(){
+    if (error) return;
+    memory += parseFloat(display);
+    waitingForOperand = true;
+    render();
+  }
+  function memMinus(){
+    if (error) return;
+    memory -= parseFloat(display);
+    waitingForOperand = true;
+    render();
+  }
+
+  // --- Independent second memory: MII+ / MII- add & subtract; MIIC recalls (tap) or clears (double-tap)
+  function mii2Plus(){
+    if (error) return;
+    memory2 += parseFloat(display);
+    waitingForOperand = true;
+    render();
+  }
+  function mii2Minus(){
+    if (error) return;
+    memory2 -= parseFloat(display);
+    waitingForOperand = true;
+    render();
+  }
+  function mii2RecallOrClear(){
+    if (error) return;
+    if (mii_clearArmed) {
+      memory2 = 0;
+      mii_clearArmed = false;
+      clearTimeout(mii_timer);
+    } else {
+      display = clampDisplay(memory2);
+      waitingForOperand = true;
+      mii_clearArmed = true;
+      mii_timer = setTimeout(() => { mii_clearArmed = false; }, 600);
+    }
+    render();
+  }
+
+  function gtPress(){
+    if (error) return;
+    if (gtArmedToClear) {
+      grandTotal = 0;
+      gtArmedToClear = false;
+    } else {
+      display = clampDisplay(grandTotal);
+      waitingForOperand = true;
+      gtArmedToClear = true;
+      setTimeout(() => { gtArmedToClear = false; }, 600);
+    }
+    render();
+  }
+
+  document.querySelectorAll('button[data-digit]').forEach(btn=>{
+    btn.addEventListener('click', ()=> inputDigit(btn.dataset.digit));
+  });
+  document.querySelectorAll('button[data-op]').forEach(btn=>{
+    btn.addEventListener('click', ()=> setOperator(btn.dataset.op));
+  });
+  document.querySelectorAll('button[data-act]').forEach(btn=>{
+    const act = btn.dataset.act;
+    btn.addEventListener('click', ()=>{
+      switch(act){
+        case '00': inputDoubleZero(); break;
+        case 'dot': inputDot(); break;
+        case 'c': allClear(); break;
+        case 'ce': clearEntry(); break;
+        case 'back': backspace(); break;
+        case 'sign': toggleSign(); break;
+        case 'pct': percent(); break;
+        case 'eq': equals(); break;
+        case 'mu': startMarkup(); break;
+        case 'mc': memClear(); break;
+        case 'mr': memRecall(); break;
+        case 'm+': memPlus(); break;
+        case 'm-': memMinus(); break;
+        case 'mii+': mii2Plus(); break;
+        case 'mii-': mii2Minus(); break;
+        case 'miic': mii2RecallOrClear(); break;
+      }
+    });
+  });
+
+  document.querySelectorAll('#decTrack button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      decimalPlaces = btn.dataset.val;
+      document.querySelectorAll('#decTrack button').forEach(b=> b.classList.toggle('active', b === btn));
+      render();
+    });
+  });
+  document.querySelectorAll('#grpTrack button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      groupMode = btn.dataset.val;
+      document.querySelectorAll('#grpTrack button').forEach(b=> b.classList.toggle('active', b === btn));
+      render();
+    });
+  });
+  document.querySelector('#decTrack button[data-val="N"]').classList.add('active');
+  document.querySelector('#grpTrack button[data-val="N"]').classList.add('active');
+
+  window.addEventListener('keydown', (e)=>{
+    if (e.key >= '0' && e.key <= '9') { inputDigit(e.key); return; }
+    if (e.key === '.') { inputDot(); return; }
+    if (['+','-','*','/'].includes(e.key)) { setOperator(e.key); return; }
+    if (e.key === '^') { setOperator('^'); return; }
+    if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); equals(); return; }
+    if (e.key === 'Escape') { allClear(); return; }
+    if (e.key === 'Backspace') { backspace(); return; }
+    if (e.key === '%') { percent(); return; }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
